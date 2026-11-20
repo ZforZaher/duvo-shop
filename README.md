@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Duvo shop
 
-## Getting Started
+Online shop where cafés order Duvo twin cups and sleeves by the carton and pay by invoice.
+Built with Next.js 15 (App Router, TypeScript) and three.js for the 3D cups.
 
-First, run the development server:
+## Run it on this PC
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000. The admin panel is at http://localhost:3000/admin; sign in with
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env.local`. Restart `npm run dev` after changing them.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Dev mode is slow on purpose** (no minifying, extra checks). To see the real speed, or to run Lighthouse, use
+the production build:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+`npm run dev` builds into `.next-dev` and `npm start` uses `.next`, so both can run at the same time.
 
-To learn more about Next.js, take a look at the following resources:
+## Where things are
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| What | Where |
+|---|---|
+| Add, edit, hide or delete products; prices and carton sizes | Admin › Products (saved in `.data/settings.json`) |
+| Built-in products, carton discounts, VAT | `src/lib/catalog.ts` |
+| Pages | `src/app/` — home, `shop`, `shop/[slug]`, `cart`, `checkout`, `order/[id]`, `admin` |
+| Order storage | `src/lib/server/orders.ts` (saves to `.data/orders.json` for now) |
+| Dashboard sign-in | `src/lib/server/admin-auth.ts` |
+| 3D cup viewer | `src/components/CupViewer.tsx` |
+| 3D display models | `public/models/cups.json` (made by `npm run bake`) |
+| Still pictures shown before the 3D starts | `public/posters/` (made by `npm run posters`, see below) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Speed
 
-## Deploy on Vercel
+- The 3D engine (three.js) is not part of the first page load. Each cup first shows a still picture; the
+  live 3D starts when the visitor touches, scrolls or moves the mouse, or after the page has been quiet
+  for 5 seconds. The models are decoded in a background worker.
+- After changing a cup (`npm run bake`), re-make the still pictures: run `npm run build && npm start`,
+  then `npm run posters` in a second terminal.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Protecting the cup design
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`design/geometry.mjs` is the full cup design. It is never sent to visitors and is kept out of git.
+`npm run bake` turns it into display-only models: the lid's insides are removed and proportions are
+nudged a few percent, so measurements taken from the website are wrong. Re-run it after changing a cup.
+
+## WhatsApp order alerts (WaPilot)
+
+One WaPilot instance is enough: the instance is the WhatsApp number that **sends** the alerts; the alert
+goes to any number or group you choose.
+
+1. In WaPilot, open your instance and make sure it is connected (QR scanned). Copy the API token and the
+   instance's unique name (also listed by `GET https://api.wapilot.net/api/v2/instances`).
+2. In `.env.local` set `WHATSAPP_PROVIDER=wapilot`, `WAPILOT_TOKEN=…` and `WAPILOT_INSTANCE_ID=…`, then restart the server.
+3. In Admin › Settings, tick the alerts box and enter who receives them: a phone number with country code
+   (not the instance's own number, or it lands in "Message yourself" without a notification), or a group id
+   ending in `@g.us` to alert you and your staff together. Press **Send test message**.
+
+Each order is sent once (its order id is the idempotency key). If the instance disconnects, the order is
+still saved and Admin › Settings shows why the last alert failed.
+
+## Admin accounts
+
+The first sign-in creates the owner account from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (stored hashed in
+`.data/admins.json`). After that you can remove `ADMIN_PASSWORD` from `.env.local` and manage the team in
+Admin › Team. Behind a host that sets the real visitor IP (e.g. Vercel), add `TRUST_PROXY=platform`.
+
+## Before going live
+
+1. Replace the example prices in `src/lib/catalog.ts` and set `EXAMPLE_PRICES = false`.
+2. Move order storage to a real database (e.g. Supabase): only `src/lib/server/orders.ts` changes.
+   The JSON file works on one server but not on hosts like Vercel, whose disk is not kept.
+3. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` in the host's environment settings (never commit `.env.local`).
+4. Add order emails (to you and the café), then deploy (e.g. Vercel) and connect your domain.
