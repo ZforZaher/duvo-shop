@@ -30,7 +30,7 @@ npm start
 | Add, edit, hide or delete products; prices and carton sizes | Admin › Products (saved in `.data/settings.json`) |
 | Built-in products, carton discounts, VAT | `src/lib/catalog.ts` |
 | Pages | `src/app/` — home, `shop`, `shop/[slug]`, `cart`, `checkout`, `order/[id]`, `admin` |
-| Order storage | `src/lib/server/orders.ts` (saves to `.data/orders.json` for now) |
+| Order storage | `src/lib/server/orders.ts`: online in Supabase when `DATABASE_URL` is set, otherwise `.data/` |
 | Dashboard sign-in | `src/lib/server/admin-auth.ts` |
 | 3D cup viewer | `src/components/CupViewer.tsx` |
 | 3D display models | `public/models/cups.json` (made by `npm run bake`) |
@@ -49,6 +49,21 @@ npm start
 `design/geometry.mjs` is the full cup design. It is never sent to visitors and is kept out of git.
 `npm run bake` turns it into display-only models: the lid's insides are removed and proportions are
 nudged a few percent, so measurements taken from the website are wrong. Re-run it after changing a cup.
+
+## Online database (Supabase)
+
+Orders, shop settings and admin accounts are stored online when `DATABASE_URL` is set; without it they
+stay in `.data/` on this computer.
+
+1. Create a free project at supabase.com (pick the region closest to you, e.g. Frankfurt) and save the
+   database password it asks for.
+2. In the project, press **Connect** and copy the **Transaction pooler** connection string. Put it in
+   `.env.local` as `DATABASE_URL=...`, with your database password in place of `[YOUR-PASSWORD]`.
+3. Run `npm run db:setup`. It creates the tables, locks them so only the shop's server can read them, and
+   copies your existing orders, settings and admin accounts in (it never overwrites what is already online).
+4. Restart the server. You can see orders in Supabase › Table editor › `orders`.
+
+On the free plan Supabase pauses a project after a week with no activity; open the dashboard to wake it.
 
 ## WhatsApp order alerts (WaPilot)
 
@@ -74,7 +89,6 @@ Admin › Team. Behind a host that sets the real visitor IP (e.g. Vercel), add `
 ## Before going live
 
 1. Replace the example prices in `src/lib/catalog.ts` and set `EXAMPLE_PRICES = false`.
-2. Move order storage to a real database (e.g. Supabase): only `src/lib/server/orders.ts` changes.
-   The JSON file works on one server but not on hosts like Vercel, whose disk is not kept.
+2. Set `DATABASE_URL` (see "Online database"): hosts like Vercel don't keep files on disk.
 3. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` in the host's environment settings (never commit `.env.local`).
 4. Add order emails (to you and the café), then deploy (e.g. Vercel) and connect your domain.

@@ -2,12 +2,11 @@ import { after, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { quote, type CartItem } from '@/lib/pricing';
 import { createOrder, phoneKey, type Cafe } from '@/lib/server/orders';
-import { getProducts } from '@/lib/server/settings';
+import { getProducts, getSettings } from '@/lib/server/settings';
 import { cleanLine, cleanText, isEmail, isPhone } from '@/lib/server/sanitize';
 import { limited } from '@/lib/server/rate-limit';
 import { ipFrom, sameOrigin } from '@/lib/server/request';
 import { alertNewOrder } from '@/lib/server/whatsapp';
-import { getSettings } from '@/lib/server/settings';
 import { toView } from '@/components/OrderConfirmation';
 
 const LIMITS: Record<keyof Cafe, number> = { cafeName: 120, contactName: 120, phone: 30, email: 160, city: 80, address: 400, taxId: 40, deliveryDate: 10, notes: 1000 };
@@ -35,7 +34,8 @@ export async function POST(req: Request) {
   if (!body || typeof body !== 'object') return fail('The order could not be read. Please try again.');
   if (body.website) return fail('The order could not be placed.'); // hidden field only bots fill in
 
-  const products = await getProducts();
+  const settings = await getSettings(); // one read for both the live prices and the confirmation details
+  const products = await getProducts(false, settings);
   const raw = Array.isArray(body.items) ? body.items.slice(0, 20) : [];
   const items: CartItem[] = raw
     .filter((i): i is { slug: string; cartons: number } => !!i && typeof i === 'object' && typeof (i as CartItem).slug === 'string')
@@ -67,8 +67,7 @@ export async function POST(req: Request) {
   revalidatePath('/admin', 'layout');
   after(() => alertNewOrder(order)); // WhatsApp alert after the response; never blocks or fails the order
   // The confirmation goes back with the answer, so the checkout can show it straight away (no second page load).
-  const biz = (await getSettings()).business;
-  return NextResponse.json({ id: order.id, token: order.token, order: toView(order), biz }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ id: order.id, token: order.token, order: toView(order), biz: settings.business }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 // No other methods, and no CORS: browsers on other sites can't call this endpoint.

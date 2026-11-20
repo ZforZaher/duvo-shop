@@ -18,6 +18,7 @@ export function env(): Env {
   const problems: string[] = [];
   const sessionSecret = e.ADMIN_SESSION_SECRET ?? '';
   if (sessionSecret.length < 32) problems.push('ADMIN_SESSION_SECRET must be at least 32 random characters.');
+  if (e.DATABASE_URL && !/^postgres(ql)?:\/\/\S+$/.test(e.DATABASE_URL.trim())) problems.push('DATABASE_URL must be the PostgreSQL connection string from Supabase (it starts with postgresql://).');
   const provider = (e.WHATSAPP_PROVIDER ?? 'none').toLowerCase();
   if (!['none', 'wapilot', 'cloud', 'callmebot'].includes(provider)) problems.push('WHATSAPP_PROVIDER must be none, wapilot, cloud or callmebot.');
   if (provider === 'wapilot' && (!e.WAPILOT_TOKEN || !e.WAPILOT_INSTANCE_ID)) problems.push('WHATSAPP_PROVIDER=wapilot needs WAPILOT_TOKEN and WAPILOT_INSTANCE_ID.');

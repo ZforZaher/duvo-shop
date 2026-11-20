@@ -54,8 +54,8 @@ export function updateSettings(fn: (s: Settings) => void): Promise<void> {
 }
 
 /** Products with live prices applied. `all` includes hidden ones (admin); otherwise only active (shop). */
-export async function getProducts(all = false): Promise<Product[]> {
-  const s = await getSettings();
+export async function getProducts(all = false, settings?: Settings): Promise<Product[]> {
+  const s = settings ?? await getSettings(); // pass settings already read to save a database trip
   const list = [...DEFAULT_PRODUCTS, ...s.custom].map(p => ({ ...p, ...s.products[p.slug] }));
   return all ? list : list.filter(p => p.active);
 }
