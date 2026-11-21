@@ -1,0 +1,11 @@
+# Never upload secrets, local data, the private cup design or local build output to Vercel.
+.env*
+!.env.example
+.data
+design
+screenshots
+node_modules
+.next
+.next-dev
+scripts/.geom-*
+*.tsbuildinfo
