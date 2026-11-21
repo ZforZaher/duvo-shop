@@ -47,3 +47,6 @@ next-env.d.ts
 # private cup design source: never commit (the site only needs public/models/cups.json)
 /design/
 /scripts/.geom-*
+
+# local screenshots
+/screenshots/

@@ -65,6 +65,19 @@ stay in `.data/` on this computer.
 
 On the free plan Supabase pauses a project after a week with no activity; open the dashboard to wake it.
 
+## Order alerts on your phone (Telegram)
+
+1. In Telegram, open **@BotFather**, send `/newbot`, and pick a name and a username ending in `bot`.
+   BotFather replies with a token like `123456789:AA...`. Keep it secret.
+2. Put it in `.env.local` as `TELEGRAM_BOT_TOKEN=...`.
+3. Open your new bot in Telegram (BotFather gives the link) and press **Start**.
+4. Run `npm run telegram:link`. It finds your chat, saves `TELEGRAM_CHAT_ID` in `.env.local`, and sends a
+   confirmation to your phone.
+5. Restart the shop, tick "Send me an alert for every new order" in Admin › Settings, save, and press
+   **Send test message**.
+
+Each new order arrives as a Telegram message with the café, items, totals and a link to the order.
+
 ## WhatsApp order alerts (WaPilot)
 
 One WaPilot instance is enough: the instance is the WhatsApp number that **sends** the alerts; the alert

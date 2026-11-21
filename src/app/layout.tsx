@@ -8,7 +8,7 @@ const mono = DM_Mono({ weight: ['400', '500'], subsets: ['latin'], variable: '--
 
 export const metadata: Metadata = {
   title: { default: 'Duvo · Twin cups for cafés', template: '%s · Duvo' },
-  description: 'Two drinks, one cup. Order Duvo split, heart and round twin cups and printed sleeves for your café.',
+  description: 'Two drinks, one cup. Order Duvo twin cups and printed sleeves for your café.',
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#EFE6DA' };
 

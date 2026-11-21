@@ -8,6 +8,7 @@ import { clientIp } from '@/lib/server/request';
 import { clearLimit, limited } from '@/lib/server/rate-limit';
 import { cleanLine, cleanText, digits, isUsername, toNumber } from '@/lib/server/sanitize';
 import { isGroupId } from '@/lib/server/whatsapp';
+import { env } from '@/lib/server/env';
 import { deleteOrder, setStatus, STATUSES, type Status } from '@/lib/server/orders';
 import { getProducts, isBuiltIn, updateSettings } from '@/lib/server/settings';
 import type { Category, Design, Product } from '@/lib/catalog';
@@ -164,7 +165,7 @@ export async function saveSettings(_: FormState, fd: FormData): Promise<FormStat
   const to = isGroupId(rawTo) ? rawTo : digits(rawTo); // a phone number, or a WhatsApp group id (…@g.us)
   if (!isGroupId(to) && to && (to.length < 8 || to.length > 15)) return { error: 'Enter the WhatsApp number with country code (e.g. 201001234567), or a group id ending in @g.us.' };
   const enabled = fd.get('waEnabled') === 'on';
-  if (enabled && !to) return { error: 'Add the WhatsApp number that should receive order alerts.' };
+  if (enabled && !to && !env().telegram && !env().ntfy) return { error: 'Set up ntfy or Telegram (see README), or add the WhatsApp number that should receive order alerts.' };
   await updateSettings(s => {
     s.business = {
       name: cleanLine(str(fd, 'name'), 80) || 'Duvo',

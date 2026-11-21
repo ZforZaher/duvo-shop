@@ -8,17 +8,20 @@ export const metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
   await requireUser('owner');
-  const s = await getSettings(), provider = env().whatsapp.provider;
-  const providerName = { none: 'Not set up', wapilot: 'WaPilot', cloud: 'WhatsApp Cloud API (Meta)', callmebot: 'CallMeBot' }[provider];
+  const s = await getSettings(), provider = env().whatsapp.provider, telegram = !!env().telegram, ntfy = !!env().ntfy;
+  const providerName = { none: 'not set up', wapilot: 'WaPilot', cloud: 'WhatsApp Cloud API (Meta)', callmebot: 'CallMeBot' }[provider];
   return (
     <>
       <div className="a-head"><div><div className="label">Owner only</div><h1>Settings</h1></div></div>
       <ActionForm action={saveSettings} submit="Save settings" className="f settings">
         <section className="panel">
-          <h2>WhatsApp order alerts</h2>
-          <p className="muted small">Each new order is sent to this number on WhatsApp. Sending service: <b>{providerName}</b>{provider === 'none' && ' (add it in .env.local, see the README)'}.</p>
-          <label className="check"><input type="checkbox" name="waEnabled" defaultChecked={s.whatsapp.enabled} /><span>Send me a WhatsApp message for every new order</span></label>
-          <label htmlFor="waTo">Send alerts to: WhatsApp number with country code, or a group id
+          <h2>Order alerts on your phone</h2>
+          <p className="muted small">
+            ntfy app: <b>{ntfy ? 'connected' : 'not set up'}</b> · Telegram: <b>{telegram ? 'connected' : 'not set up'}</b> · WhatsApp: <b>{providerName}</b>
+            {!ntfy && !telegram && provider === 'none' && ' (set one up in .env.local, see the README)'}.
+          </p>
+          <label className="check"><input type="checkbox" name="waEnabled" defaultChecked={s.whatsapp.enabled} /><span>Send me an alert for every new order</span></label>
+          <label htmlFor="waTo">WhatsApp number with country code, or a group id <span className="opt">({provider === 'none' ? 'only for WhatsApp alerts' : 'optional with Telegram'})</span>
             <input id="waTo" name="waTo" defaultValue={s.whatsapp.to} placeholder="201001234567  or  120363…@g.us" maxLength={48} autoComplete="off" spellCheck={false} /></label>
           {provider === 'wapilot' && <p className="muted small" style={{ margin: 0 }}>Your WaPilot instance is the number that <b>sends</b>. Put a different number here (or a group you are in), otherwise the alert lands in “Message yourself” with no notification.</p>}
           {s.lastAlert && (
@@ -36,8 +39,8 @@ export default async function SettingsPage() {
         </section>
       </ActionForm>
       <section className="panel">
-        <h2>Test the WhatsApp alert</h2>
-        <p className="muted small">Save your settings first. Sends one test message to the number above.</p>
+        <h2>Test the alert</h2>
+        <p className="muted small">Save your settings first. Sends one test message to every channel that is set up.</p>
         <ActionForm action={testWhatsApp} submit="Send test message" />
       </section>
     </>
